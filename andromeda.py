@@ -1,12 +1,41 @@
-from flask import Flask
+# --------------------------------------------------------------------------- #
+#                                                                             #
+#                             Args Parse                                      #
+#                                                                             #
+# --------------------------------------------------------------------------- #
+from argparse import ArgumentParser
 
-app = Flask(__name__)
+from app import _app
+from config.strings import Strings as s
 
+parser = ArgumentParser(__file__, description=f'Andromeda')
 
-@app.route('/')
-def hello_world():
-    return 'Hello World!'
+parser.add_argument(
+    f'--development',
+    '-dev',
+    help=f'Dev Mode.',
+    action=f'store_true'
+)
 
+parser.add_argument(
+    f'--production',
+    f'-prod',
+    help=f'Prod Mode.',
+    action=f'store_true'
+)
 
-if __name__ == '__main__':
-    app.run()
+args = parser.parse_args()
+
+# --------------------------------------------------------------------------- #
+#                                                                             #
+#                               Launch                                        #
+#                                                                             #
+# --------------------------------------------------------------------------- #
+
+if __name__ == s.main:
+    _app.run(
+        host=_app._config.web.active.address,
+        port=_app._config.web.active.port,
+        debug=_app.debug,
+        threaded=True
+    )
