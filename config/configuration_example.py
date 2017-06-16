@@ -15,14 +15,14 @@ config = Config({
         'dev': {
             'name': f'Dev',
             'address': f'0.0.0.0',
-            'port': 8000,
+            'port': 8010,
             'secret_key': f'SUPER_SECRET_DEV',
             'lifetime': 1  # session lifetime in days.
         },
         'prod': {
             'name': f'Prod',
             'address': f'0.0.0.0',
-            'port': 5000,
+            'port': 5010,
             'secret_key': f'SUPER_SECRET',
             'lifetime': 1  # session lifetime in days.
         },
