@@ -74,6 +74,7 @@ def app_routes(app, appname):
     @cross_origin()
     def update_queue():
         jobs = app.sql.execute(f'SELECT job_id FROM andromeda.queue WHERE status_id > 0;').fetchall()
+        app.sql.commit()
         jobs_list = []
         jobs_list_string = ''
         for job in jobs:
@@ -198,6 +199,7 @@ def app_routes(app, appname):
     @cross_origin()
     def all_job():
         results = app.sql.execute(f'SELECT job_id FROM andromeda.queue WHERE status_id = 0;').fetchall()
+        app.sql.commit()
         jobs = []
         jobs_str = ''
         for result in results:
