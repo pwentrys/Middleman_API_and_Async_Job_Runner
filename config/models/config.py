@@ -20,3 +20,4 @@ class Config:
             'name': f(args, 'cookie_name')
         })
         self.web = f(args, 'web')
+        self.sql = f(args, 'sql')
