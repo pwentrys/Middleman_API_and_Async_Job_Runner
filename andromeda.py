@@ -5,7 +5,7 @@
 # --------------------------------------------------------------------------- #
 from argparse import ArgumentParser
 
-from app import _app
+from app import run
 from config.strings import Strings as s
 
 parser = ArgumentParser(__file__, description=f'Andromeda')
@@ -33,12 +33,13 @@ args = parser.parse_args()
 # --------------------------------------------------------------------------- #
 
 if __name__ == s.main:
-    _app.toaster.toast_args({'msg': 'Online.'})
-    _app.run(
-        host=_app._config.web.active.address,
-        port=_app._config.web.active.port,
-        debug=_app.debug,
+    app = run()
+    app.toaster.open()
+    app.run(
+        host=app.authinfo.web.active.address,
+        port=app.authinfo.web.active.port,
+        debug=app.debug,
         threaded=True
     )
-    _app.toaster.close()
+    app.toaster.close()
     # _app.toaster.toast_args({'msg': 'Offline.'})

@@ -1,7 +1,7 @@
-from win10toast import ToastNotifier
 from config.utils import from_args_fallback as ff, from_args_fallback_int as ffi
 import os
 import requests
+from win10toast import ToastNotifier
 
 
 class Toaster:
@@ -13,6 +13,9 @@ class Toaster:
     def __init__(self):
         self.t = ToastNotifier()
         self.address = f'http://192.168.1.172:8020/toast'
+
+    def open(self):
+        self.toast_args({'msg': 'Online.'})
 
     def close(self):
         self.toast_args({'msg': 'Offline.'})

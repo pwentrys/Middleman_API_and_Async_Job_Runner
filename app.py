@@ -8,9 +8,9 @@ from datetime import timedelta
 
 from flask import Flask
 
-from sql.mysql import Connection as mysql
+from sql.mysql import Connection as sql
 
-from config.configuration import config as _config
+from config.configuration import config as c
 from config.strings import Strings as s
 from routes import app_routes as setup_routes
 from utils.toaster import Toaster
@@ -21,28 +21,31 @@ from utils.toaster import Toaster
 #                                                                             #
 # --------------------------------------------------------------------------- #
 
-_app = Flask(
-    __name__,
-    static_url_path=s.empty,
-    template_folder=s.templates,
-    static_folder=s.static
-)
 
-_app._config = _config
-_app.__name__ = _config.name
-_app.config.from_object(__name__)
+def run():
+    app = Flask(
+        __name__,
+        static_url_path=s.empty,
+        template_folder=s.templates,
+        static_folder=s.static
+    )
 
-_app.config.update(
-    SESSION_COOKIE_DOMAIN=_config.cookie.domain,
-    SESSION_COOKIE_NAME=_config.cookie.name,
-    DEBUG=_config.debug
-)
+    app.authinfo = c
+    app.__name__ = c.name
+    app.config.from_object(__name__)
 
-_app.debug = _config.debug
+    app.config.update(
+        SESSION_COOKIE_DOMAIN=c.cookie.domain,
+        SESSION_COOKIE_NAME=c.cookie.name,
+        DEBUG=c.debug
+    )
 
-_app.secret_key = _config.web.active.secret_key
-_app.permanent_session_lifetime = timedelta(days=_config.web.active.lifetime)
-_app.toaster = Toaster()
-_app.sql = mysql(_config.sql.mysql, _app.toaster)
+    app.debug = c.debug
 
-setup_routes(_app, _app.__name__)
+    app.secret_key = c.web.active.secret_key
+    app.permanent_session_lifetime = timedelta(days=c.web.active.lifetime)
+    app.toaster = Toaster()
+    app.sql = sql(c.sql.mysql, app.toaster)
+
+    setup_routes(app, app.__name__)
+    return app

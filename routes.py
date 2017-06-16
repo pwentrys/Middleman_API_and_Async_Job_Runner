@@ -107,7 +107,7 @@ def app_routes(app, appname):
 
     @cross_origin()
     def get_job():
-        res = app.sql.execute(f'SELECT Q.id, J.command '
+        res = app.sql.execute(f'SELECT J.id, J.command '
                               f'FROM andromeda.queue Q, andromeda.jobs J '
                               f'WHERE J.id = Q.job_id AND Q.status_id = 0 '
                               f'ORDER BY Q.datetime_create ASC LIMIT 1;'
@@ -136,9 +136,10 @@ def app_routes(app, appname):
         toast_str = 'Begin' if status == 1 else 'Finish'
         col_str = f'datetime_{toast_str.lower()}'
 
+        # app.toaster.toast_args({'title': 'Job', 'msg': f'{toast_str}: {idval}'})
         app.sql.execute(f'UPDATE andromeda.queue SET status_id={status}, {col_str}=now() WHERE job_id={idval};')
         app.sql.commit()
-        app.toaster.toast_args({'title': 'Job', 'msg': f'{toast_str}: {idval}'})
+        requests.get(f'http://192.168.1.172:8020/toast/Andromeda - Job/{toast_str} - {idval}/{status}')
 
     @cross_origin()
     def begin_job(idval=-1):
@@ -159,7 +160,7 @@ def app_routes(app, appname):
 
     @cross_origin()
     def run_queue():
-        active_count = get_num_job_ids_by_status_id(1)
+        active_count = int(requests.get(f'http://192.168.1.172:8010/job/count/1').text)
         if active_count == 0:
             queue_size = int(requests.get(f'http://192.168.1.172:8010/job/count/0').text)
             if queue_size > 0:
@@ -172,17 +173,17 @@ def app_routes(app, appname):
                     # app.sql.execute(f'UPDATE andromeda.queue SET status_id=1 WHERE job_id={_id};')
                     # app.sql.commit()
                     # app.toaster.toast_args({'title': 'Job', 'msg': f'Begin: {_id}'})
-                    update_job_status(_id, 1)
+                    # update_job_status(_id, 1)
 
                     _command_decoded = base64.standard_b64decode(_command).decode('utf-8')
                     _out = subprocess.getoutput(_command_decoded)
 
-                    update_job_status(_id, 2)
                     # app.sql.execute(f'UPDATE andromeda.queue SET status_id=2 WHERE job_id={_id};')
                     # app.sql.commit()
                     # app.toaster.toast_args({'title': 'Job', 'msg': f'Finish: {_id}'})
                     # requests.get(f'http://192.168.1.172:8010/job/finish/{_id}')
                     print(str(_out))
+                    # update_job_status(_id, 2)
 
                     return redirect(f'/job/run/complete')
                 except Exception as error:
