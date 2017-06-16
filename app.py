@@ -8,6 +8,8 @@ from datetime import timedelta
 
 from flask import Flask
 
+from sql.mysql import Connection as mysql
+
 from config.configuration import config as _config
 from config.strings import Strings as s
 from routes import app_routes as setup_routes
@@ -41,5 +43,6 @@ _app.debug = _config.debug
 _app.secret_key = _config.web.active.secret_key
 _app.permanent_session_lifetime = timedelta(days=_config.web.active.lifetime)
 _app.toaster = Toaster()
+_app.sql = mysql(_config.sql.mysql, _app.toaster)
 
 setup_routes(_app, _app.__name__)
