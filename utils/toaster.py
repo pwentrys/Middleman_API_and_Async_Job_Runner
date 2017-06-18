@@ -1,5 +1,4 @@
 from config.utils import from_args_fallback as ff, from_args_fallback_int as ffi
-import os
 import requests
 from win10toast import ToastNotifier
 
