@@ -175,15 +175,18 @@ def app_routes(app, appname):
                     # app.sql.commit()
                     # app.toaster.toast_args({'title': 'Job', 'msg': f'Begin: {_id}'})
                     # update_job_status(_id, 1)
-
+                    req_start = requests.get(f'http://192.168.1.172:8010/job/begin/{_id}')
+                    print(req_start)
                     _command_decoded = base64.standard_b64decode(_command).decode('utf-8')
+                    print(_command)
                     _out = subprocess.getoutput(_command_decoded)
-
+                    print(str(_out))
+                    req_fin = requests.get(f'http://192.168.1.172:8010/job/finish/{_id}')
+                    print(req_fin)
                     # app.sql.execute(f'UPDATE andromeda.queue SET status_id=2 WHERE job_id={_id};')
                     # app.sql.commit()
                     # app.toaster.toast_args({'title': 'Job', 'msg': f'Finish: {_id}'})
                     # requests.get(f'http://192.168.1.172:8010/job/finish/{_id}')
-                    print(str(_out))
                     # update_job_status(_id, 2)
 
                     return redirect(f'/job/run/complete')
