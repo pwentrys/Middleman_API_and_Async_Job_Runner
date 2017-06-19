@@ -104,8 +104,8 @@ def app_routes(app, appname):
                 counter = 0
                 update_queue_insert(_jobs_str, app)
                 _jobs_str = ''
-
-        update_queue_insert(_jobs_str, app)
+        if counter > 0:
+            update_queue_insert(_jobs_str, app)
         return redirect('/')
     add_url_vars(app, 'job/update', update_queue)
 
