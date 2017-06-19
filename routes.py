@@ -75,27 +75,35 @@ def app_routes(app, appname):
         """
     add_url_vars(app, 'job/add/<string:command>', add_job)
 
+    def update_queue_insert(_jobs_str, _app):
+        if len(_jobs_str) > 0:
+            _insert = f'INSERT INTO andromeda.queue (`job_id`, `status_id`) VALUES {_jobs_str[:-1]};'
+            _app.sql.execute(_insert)
+            _app.sql.commit()
+
     @cross_origin()
     def update_queue():
         jobs = app.sql.execute(f'SELECT job_id FROM andromeda.queue WHERE status_id > 0;').fetchall()
         app.sql.commit()
-        jobs_list = []
+        # jobs_list = []
         jobs_list_string = ''
         for job in jobs:
-            jobs_list.append(job[0])
+            # jobs_list.append(job[0])
             jobs_list_string += f'{job[0]},'
         if len(jobs_list_string) == 0:
-            jobs_list = [-1]
+            # jobs_list = [-1]
             jobs_list_string = '-1,'
         jobs_list_string = jobs_list_string[:-1]
-        _jobs = app.sql.execute(f'SELECT id, command FROM andromeda.jobs WHERE id NOT IN ({jobs_list_string}) LIMIT 50;').fetchall()
+        _jobs = app.sql.execute(f'SELECT id, command FROM andromeda.jobs WHERE id NOT IN ({jobs_list_string});').fetchall()
+        counter = 0
         _jobs_str = ''
         for _job in _jobs:
             _jobs_str += f'({_job[0]}, 0),'
-        if len(_jobs_str) > 0:
-            _insert = f'INSERT INTO andromeda.queue (`job_id`, `status_id`) VALUES {_jobs_str[:-1]};'
-            app.sql.execute(_insert)
-            app.sql.commit()
+            counter += 1
+            if counter >= 50:
+                counter = 0
+                update_queue_insert(_jobs_str, app)
+                _jobs_str = ''
         return redirect('/')
     add_url_vars(app, 'job/update', update_queue)
 
