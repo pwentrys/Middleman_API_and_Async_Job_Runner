@@ -1,13 +1,16 @@
 from flask import Flask, redirect
 from flask_cors import cross_origin
+from datetime import datetime, timedelta
 # from urllib3 import open
 import requests
 import base64
 import subprocess
+from multiprocessing import Process
 
 from config.strings import Strings as s
 from config.templates import Templates
 from utils.flask_extensions import add_url_vars
+from utils.mps import run as Run_MPs
 
 t = Templates(__file__)
 
@@ -15,6 +18,7 @@ t = Templates(__file__)
 def app_routes(app, appname):
     assert isinstance(app, Flask)
     app.t = t
+    app.mps = {}
 
     # ---------------------------------------------------------------------------- #
     #                                                                              #
@@ -137,10 +141,9 @@ def app_routes(app, appname):
         toast_str = 'Begin' if status == 1 else 'Finish'
         col_str = f'datetime_{toast_str.lower()}'
 
-        # app.toaster.toast_args({'title': 'Job', 'msg': f'{toast_str}: {idval}'})
         app.sql.execute(f'UPDATE andromeda.queue SET status_id={status}, {col_str}=now() WHERE job_id={idval};')
         app.sql.commit()
-        requests.get(f'http://192.168.1.172:8020/toast/Andromeda - Job/{toast_str} - {idval}/{status}')
+        requests.get(f'http://192.168.1.172:8020/toast/Andromeda Job/{toast_str} {idval}/{status}')
 
     @cross_origin()
     def begin_job(idval=-1):
@@ -160,6 +163,83 @@ def app_routes(app, appname):
     add_url_vars(app, 'job/run/complete', run_queue_redirect)
 
     @cross_origin()
+    def finish_mps(dt):
+        print(f'FINISH MPS DT: {dt}')
+        if type(dt) != type(1):
+            dt = int(dt)
+
+        print(app.mps[dt])
+        p = app.mps[dt]
+        if p.is_alive():
+            print(f'TERMINATING PROCESS')
+            p.terminate()
+            print(f'TERMINATED PROCESS - {p.is_alive()}')
+
+
+        del app.mps[dt]
+        return redirect(s.slash)
+    add_url_vars(app, 'mps/finish/<int:dt>', finish_mps)
+
+    @cross_origin()
+    def run_mps():
+        ts = int(datetime.utcnow().timestamp())
+        p = Process(
+                target=Run_MPs,
+                args=[ts]
+        )
+        p.start()
+
+        app.mps[ts] = p
+        return redirect(s.slash)
+    add_url_vars(app, 'mps/run/test', run_mps)
+
+    @cross_origin()
+    def do_toasty_toast(title, message):
+        title = f'{title}'
+        message = f'{message}'
+        duration = 3
+        address = f'http://192.168.1.172:8020/toast'
+        _url = f'{address}/{title}/{message}/{duration}'
+        print(f'Will Request {_url}')
+        requests.get(_url)
+        return redirect(s.slash)
+    add_url_vars(app, 'toastthis/<string:title>/<string:message>', do_toasty_toast)
+
+    @cross_origin()
+    def finish_mp(_id):
+        print(f'FINISH PROCID DT: {_id}')
+        if type(_id) != type(1):
+            dt = int(_id)
+
+        print(app.mps[_id])
+        p = app.mps[_id]
+        if p.is_alive():
+            print(f'TERMINATING PROCESS')
+            p.terminate()
+            print(f'TERMINATED PROCESS - {p.is_alive()}')
+
+
+        del app.mps[_id]
+        try:
+            if int(requests.get(f'http://192.168.1.172:8010/job/count/0').text) > 0:
+                # id_command = requests.get(f'http://192.168.1.172:8010/job/get').text
+                # id_command_split = id_command.split(',')
+                # __id = int(id_command_split[0])
+                # _command = id_command_split[1]
+                # p = Process(
+                #     target=Run_MPs,
+                #     args=(__id, _command)
+                # )
+                # p.start()
+
+                # app.mps[__id] = p
+                requests.get(f'http://192.168.1.172:8010/job/run')
+        except Exception as error:
+            print(error)
+        return redirect('/job/run')
+    add_url_vars(app, 'mp/finish/<int:_id>', finish_mp)
+
+    @cross_origin()
     def run_queue():
         active_count = int(requests.get(f'http://192.168.1.172:8010/job/count/1').text)
         if active_count == 0:
@@ -175,24 +255,29 @@ def app_routes(app, appname):
                     # app.sql.commit()
                     # app.toaster.toast_args({'title': 'Job', 'msg': f'Begin: {_id}'})
                     # update_job_status(_id, 1)
-                    req_start = requests.get(f'http://192.168.1.172:8010/job/begin/{_id}')
-                    print(req_start)
-                    _command_decoded = base64.standard_b64decode(_command).decode('utf-8')
-                    print(_command)
-                    _out = subprocess.getoutput(_command_decoded)
-                    print(str(_out))
-                    req_fin = requests.get(f'http://192.168.1.172:8010/job/finish/{_id}')
-                    print(req_fin)
+
+                    p = Process(
+                        target=Run_MPs,
+                        args=(_id, _command)
+                    )
+                    p.start()
+
+                    app.mps[_id] = p
+                    # _command_decoded = base64.standard_b64decode(_command).decode('utf-8')
+                    # print(str(subprocess.getoutput(_command_decoded)))
+                    # requests.get(f'http://192.168.1.172:8010/job/finish/{_id}')
                     # app.sql.execute(f'UPDATE andromeda.queue SET status_id=2 WHERE job_id={_id};')
                     # app.sql.commit()
                     # app.toaster.toast_args({'title': 'Job', 'msg': f'Finish: {_id}'})
                     # requests.get(f'http://192.168.1.172:8010/job/finish/{_id}')
                     # update_job_status(_id, 2)
 
-                    return redirect(f'/job/run/complete')
+                    return redirect(f'/job/count')
                 except Exception as error:
                     print(error)
                 return f''' '''
+            else:
+                app.toaster.toast_args({'title': 'Jobs', 'msg': f'Queue Empty'})
 
             return f''' {queue_size} '''
 
