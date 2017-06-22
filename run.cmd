@@ -1,1 +1,1 @@
-H:\Code\python_envs\andromeda_361_win_64\Scripts\python.exe H:\Code\python\andromeda\andromeda.py -dev
+O:\Code\python_envs\andromeda_361_win_64\Scripts\python.exe H:\Code\python\andromeda\andromeda.py -dev

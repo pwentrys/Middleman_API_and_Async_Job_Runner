@@ -148,12 +148,19 @@ def app_routes(app, appname):
         return app.sql.execute(f'SELECT now();').fetchall()[0][0]
 
     def update_job_status(idval, status):
-        toast_str = 'Begin' if status == 1 else 'Finish'
-        col_str = f'datetime_{toast_str.lower()}'
 
-        app.sql.execute(f'UPDATE andromeda.queue SET status_id={status}, {col_str}=now() WHERE job_id={idval};')
-        app.sql.commit()
-        requests.get(f'http://192.168.1.172:8020/toast/Andromeda Job/{toast_str} {idval}/{status}')
+        if idval > -1 and status > -1:
+
+            toast_str = 'Begin' if status < 2 else 'Finish'
+
+            col_str = f'datetime_{toast_str.lower()}'
+
+            if status == 0:
+                toast_str = 'Restart'
+
+            app.sql.execute(f'UPDATE andromeda.queue SET status_id={status}, {col_str}=now() WHERE job_id={idval};')
+            app.sql.commit()
+            requests.get(f'http://192.168.1.172:8020/toast/Andromeda Job/{toast_str} {idval}/{status}')
 
     @cross_origin()
     def begin_job(idval=-1):
@@ -166,6 +173,13 @@ def app_routes(app, appname):
         update_job_status(idval, 2)
         return f''' Finish: {idval} '''
     add_url_vars(app, 'job/finish/<int:idval>', finish_job)
+
+    @cross_origin()
+    def restart_job(idval=-1):
+        update_job_status(idval, 0)
+        return redirect('/job/run')
+    add_url_vars(app, 'job/restart/<int:idval>', restart_job)
+
 
     @cross_origin()
     def run_queue_redirect():
