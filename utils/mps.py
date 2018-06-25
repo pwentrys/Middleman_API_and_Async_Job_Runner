@@ -26,6 +26,7 @@ import subprocess
 # requests.get(f'{grus}{_toast}/{title}/Finish - {_id}/{duration}')
 # requests.get(f'{andromeda}/mp{_finish}/{_id}')
 
+# THIS IS ALL MULTIPROCESSING TESTS
 
 async def run_async(_id, _command):
     title = f'Andromeda - Job'

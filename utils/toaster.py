@@ -14,12 +14,25 @@ class Toaster:
         self.address = f'http://192.168.1.172:8020/toast'
 
     def open(self):
+        """
+        Toasts when online.
+        :return:
+        """
         self.toast_args({'msg': 'Online.'})
 
     def close(self):
+        """
+        Toasts when offline.
+        :return:
+        """
         self.toast_args({'msg': 'Offline.'})
 
     def toast_args(self, args):
+        """
+        Toasts enclosed message.
+        :param args:
+        :return:
+        """
         title = ff(args, 'title', 'Update')
         if not title.__contains__(Toaster.DEFAULT_TITLE):
             title = f'{Toaster.DEFAULT_TITLE} - {title}'
